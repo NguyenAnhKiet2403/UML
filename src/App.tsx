@@ -588,11 +588,6 @@ export default function App() {
     PowerUpSystem ..> PowerUp : creates
     SpawnEnemy ..> Enemy : creates
     SaveManager ..> Game : uses
-
-    %% Styling
-    class GameObject,MovableObject,Brick,GameScreen {
-        font-style: italic
-    }
 `;
 
   useEffect(() => {

@@ -932,10 +932,6 @@
     color: var(--color-white);
   }
 
-  .italic {
-    font-style: italic;
-  }
-
   .underline-offset-4 {
     text-underline-offset: 4px;
   }
