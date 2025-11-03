@@ -849,7 +849,7 @@ public class ScoreSystem implements Observer {
         <div className="mb-8">
           <h1 className="mb-2">Arkanoid Game - UML Class Diagram</h1>
           <p className="text-slate-600">
-            Chi tiết thiết kế kiến trúc cho game Arkanoid với 31 classes, 7 packages và 5 design patterns
+            Chi tiết thiết kế kiến trúc cho game Arkanoid với 38 classes, 8 packages và 5 design patterns
           </p>
         </div>
 
