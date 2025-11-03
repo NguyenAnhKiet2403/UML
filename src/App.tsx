@@ -867,7 +867,7 @@ public class ScoreSystem implements Observer {
                   <div>
                     <CardTitle>Class Diagram</CardTitle>
                     <CardDescription>
-                      31 classes được tổ chức trong 7 packages với đầy đủ relationships
+                      38 classes được tổ chức trong 8 packages với đầy đủ relationships
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
