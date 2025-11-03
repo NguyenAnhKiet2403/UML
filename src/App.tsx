@@ -32,6 +32,8 @@ export default function App() {
         +int FPS$
         +float BALL_SPEED$
         +int LIVES$
+        +int BORDER_LINE$
+        +int PADDLE_SPEED$
     }
 
     class GameLoop {
@@ -39,11 +41,15 @@ export default function App() {
         -double frameTimeNs
         -Thread thread
         -boolean running
+        -int fps
+        -long lastFpsTime
+        -int frameCount
         +GameLoop(game, fps)
         +void run()
         +void start()
         +void stop()
         +boolean isRunning()
+        -void printFPS()
     }
 
     class Observer {
@@ -65,28 +71,26 @@ export default function App() {
         -CollisionSystem collision
         -ScoreSystem scoreSystem
         -LevelManager levelManager
-        -Paddle paddle
-        -Ball ball
+        -SpawnEnemy spawnEnemy
+        +Paddle paddle
+        +Ball ball
         -List~Brick~ bricks
+        -List~Enemy~ enemies
+        -List~Explosion~ explosions
+        -List~Bullet~ bullets
+        -List~PowerUp~ powerUps
         -HUD hud
         -MenuScreen menuScreen
         -PausedScreen pausedScreen
-        -Input input
         -GameScreen currentScreen
+        -Input input
         -int currentLevel
         -GameLoop gameLoop
-        -List~PowerUp~ powerUps
-        -List~Bullet~ bullets
-        -List~Enemy~ enemies
-        -List~Explosion~ explosions
-        -PowerUpSystem powerUpSystem
-        -SpawnEnemy spawnEnemy
         +Game(renderer, input)
         +void initLevel()
-        +void loadLevel(levelNumber)
         +void initLevelForPlay(bricksAlive, bricksHitPoints)
+        +void loadLevel(level)
         +void startGame()
-        +void resumeGame()
         +void menu()
         +void pausedGame()
         +void stopGame()
@@ -94,8 +98,21 @@ export default function App() {
         +void setScreen(screen)
         +void render()
         +GameState getState()
+        +void setState(state)
         +void startLoop()
         +void stopLoop()
+        +void resumeGame()
+        +List~Enemy~ getEnemies()
+        +void setEnemies(enemies)
+        +List~PowerUp~ getPowerUps()
+        +Ball getBall()
+        +Paddle getPaddle()
+        +int getScore()
+        +void setScore(score)
+        +void setLives(lives)
+        +int getLives()
+        +int getLevel()
+        +List~Brick~ getBricks()
     }
 
     %% Engine Package
@@ -120,7 +137,7 @@ export default function App() {
         +void clear()
         +void drawBackground(lm)
         +void draw(obj)
-        +void drawDoor(doorLeft, doorRight, frameDoorLeft, frameDoorRight)
+        +void drawDoor(spawnEnemy)
         +void present()
         +Graphics2D getGraphics()
     }
@@ -130,16 +147,32 @@ export default function App() {
         -boolean right
         -boolean fire
         -boolean esc
+        -boolean save
         -int mouseX
         -int mouseY
         -boolean mousePressed
         -int scrollAmount
+        -int lastKeyChar
+        -int lastKeyCode
         +void keyPressed(e)
         +void keyReleased(e)
+        +void keyTyped(e)
+        +void mousePressed(e)
+        +void mouseReleased(e)
+        +void mouseMoved(e)
+        +void mouseDragged(e)
+        +void mouseWheelMoved(e)
         +boolean isLeft()
         +boolean isRight()
         +boolean isFire()
         +boolean isEscape()
+        +boolean isSave()
+        +Point getMousePosition()
+        +boolean isMousePressed()
+        +int getScrollAmount()
+        +int consumeKeyChar()
+        +int consumeKeyCode()
+        +void clearLastTyped()
     }
 
     class AssetManager {
@@ -152,6 +185,7 @@ export default function App() {
         +void loadSpriteSheet(key, path, frameWidth, frameHeight)
         +BufferedImage[] getSpriteFrames(key)
         +BufferedImage getImage(key)
+        +void preloadAssets()
     }
 
     class AudioManager {
@@ -335,11 +369,13 @@ export default function App() {
     class PhysicsSystem {
         +PhysicsSystem()
         +void update(game, ball, paddle, bullets, ss)
+        +void updateBullets(bullets)
     }
 
     class CollisionSystem {
+        -PowerUpSystem powerUpSystem
         +CollisionSystem()
-        +void checkGeneral(game, ball, paddle, bricks, ss, input, powerUps, bullets, enemies, explosions)
+        +void checkGeneral(game, ball, paddle, bricks, enemies, scoreSystem, input, powerUps, explosions, bullets)
     }
 
     class ScoreSystem {
@@ -360,9 +396,11 @@ export default function App() {
 
     class LevelManager {
         -int level
+        -int maxLevel
         +LevelManager()
         +List~Brick~ loadLevel(levelNumber)
         +int getLevel()
+        +int getMaxLevel()
     }
 
     class PowerUpSystem {
@@ -381,10 +419,15 @@ export default function App() {
         -int frameDoorLeft
         -int frameDoorRight
         -Random random
+        -boolean doorOpening
         +SpawnEnemy(game, spawnInterval)
         +void update()
         +boolean isDoorLeft()
         +boolean isDoorRight()
+        +int getFrameDoorLeft()
+        +int getFrameDoorRight()
+        +void updateDoor()
+        +boolean isDoorOpening()
     }
 
     %% Persistence Package
@@ -442,6 +485,7 @@ export default function App() {
         +void render(renderer)*
         #void drawButton(g, rect, text)
         #void drawTextButton(g, rect, text)
+        #void drawCenteredString(g, text, width, y)
     }
 
     class MenuScreen {
@@ -463,14 +507,9 @@ export default function App() {
         -Rectangle exitButton
         -Rectangle resumeButton
         -Rectangle saveButton
+        -Rectangle deleteButton
         -Font nesFont
         +PausedScreen(game, input)
-        +void update()
-        +void render(renderer)
-    }
-
-    class PlayingScreen {
-        +PlayingScreen(game, input)
         +void update()
         +void render(renderer)
     }
@@ -487,6 +526,8 @@ export default function App() {
         +NameInputScreen(game, input, score)
         +void update()
         +void render(renderer)
+        -void submit()
+        -void cancel()
     }
 
     class LeaderboardScreen {
@@ -527,10 +568,10 @@ export default function App() {
     GhostBrick --|> Brick
     PowerUp --|> GameObject
     Explosion --|> GameObject
+    CollisionSystem --|> Subject
     PowerUpSystem --|> Subject
     MenuScreen --|> GameScreen
     PausedScreen --|> GameScreen
-    PlayingScreen --|> GameScreen
     NameInputScreen --|> GameScreen
     LeaderboardScreen --|> GameScreen
 
@@ -566,6 +607,7 @@ export default function App() {
     GameScreen *-- AssetManager
 
     Subject o-- Observer
+    CollisionSystem *-- PowerUpSystem
     PowerUp o-- PowerUpType
     Paddle o-- PaddleState
     GameLoop *-- Game
@@ -689,8 +731,13 @@ export default function App() {
     },
     {
       name: 'com.mygame.arkanoid.ui',
-      classes: ['GameScreen', 'MenuScreen', 'PausedScreen', 'PlayingScreen', 'NameInputScreen', 'LeaderboardScreen', 'HUD'],
+      classes: ['GameScreen', 'MenuScreen', 'PausedScreen', 'NameInputScreen', 'LeaderboardScreen', 'HUD'],
       description: 'UI screens và HUD với template method pattern',
+    },
+    {
+      name: 'com.mygame.arkanoid.util',
+      classes: ['Main'],
+      description: 'Entry point cho application',
     },
   ];
 
@@ -715,14 +762,15 @@ public static AssetManager getInstance() {
     },
     {
       name: 'Observer Pattern',
-      location: 'Subject, Observer, ScoreSystem, PowerUpSystem',
+      location: 'Subject, Observer, ScoreSystem, CollisionSystem, PowerUpSystem',
       purpose: 'Event-driven scoring system',
-      description: 'Observer pattern cho phép ScoreSystem lắng nghe các sự kiện game (brick destroyed, powerup taken) mà không cần coupling chặt chẽ với các class khác.',
+      description: 'Observer pattern cho phép ScoreSystem lắng nghe các sự kiện game (brick destroyed, powerup taken) mà không cần coupling chặt chẽ với các class khác. CollisionSystem và PowerUpSystem extend Subject để phát các sự kiện.',
       implementation: [
         'Observer interface định nghĩa onNotify(event, data)',
         'Subject class quản lý danh sách observers',
         'ScoreSystem implements Observer để nhận thông báo',
-        'PowerUpSystem extends Subject để phát sự kiện',
+        'CollisionSystem extends Subject để phát sự kiện va chạm',
+        'PowerUpSystem extends Subject để phát sự kiện power-up',
       ],
       events: ['BRICK_DESTROYED', 'BRICK_HIT', 'BALL_HIT_PADDLE', 'POWERUP_TAKEN'],
       code: `public interface Observer {
@@ -801,7 +849,7 @@ public class ScoreSystem implements Observer {
         <div className="mb-8">
           <h1 className="mb-2">Arkanoid Game - UML Class Diagram</h1>
           <p className="text-slate-600">
-            Chi tiết thiết kế kiến trúc cho game Arkanoid với 30 classes, 6 packages và 5 design patterns
+            Chi tiết thiết kế kiến trúc cho game Arkanoid với 31 classes, 7 packages và 5 design patterns
           </p>
         </div>
 
@@ -819,7 +867,7 @@ public class ScoreSystem implements Observer {
                   <div>
                     <CardTitle>Class Diagram</CardTitle>
                     <CardDescription>
-                      30 classes được tổ chức trong 6 packages với đầy đủ relationships
+                      31 classes được tổ chức trong 7 packages với đầy đủ relationships
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
@@ -910,11 +958,11 @@ public class ScoreSystem implements Observer {
                 <CardContent>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="text-center">
-                      <div className="text-3xl mb-2">30</div>
+                      <div className="text-3xl mb-2">31</div>
                       <div className="text-sm text-slate-600">Total Classes</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-3xl mb-2">6</div>
+                      <div className="text-3xl mb-2">7</div>
                       <div className="text-sm text-slate-600">Packages</div>
                     </div>
                     <div className="text-center">
